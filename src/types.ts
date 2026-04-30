@@ -83,6 +83,24 @@ export interface ReminderSettings {
   snoozeMinutes: number;
 }
 
+export interface AiSettings {
+  apiKey: string;
+  apiUrl: string;
+  model: string;
+  models: string[];
+}
+
+export interface AiDraftActivity {
+  title: string;
+  desiredMinutes: number;
+  fixedStart?: string;
+  fixed?: boolean;
+}
+
+export interface AiPlanDraft {
+  activities: AiDraftActivity[];
+}
+
 export interface AdjustPreviewRow {
   activityId: string;
   title: string;

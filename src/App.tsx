@@ -1,11 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AlarmModal } from "./components/AlarmModal";
 import { AppHeader } from "./components/AppHeader";
 import { ExecutionWorkspace } from "./components/ExecutionWorkspace";
 import { HistoryPanel } from "./components/HistoryPanel";
 import { InsightsPanel } from "./components/InsightsPanel";
+import { SettingsDialog } from "./components/SettingsDialog";
 import { StatusStrip } from "./components/StatusStrip";
 import { useActivityTimer } from "./hooks/useActivityTimer";
+import { useAiSettings } from "./hooks/useAiSettings";
+import { useAiPlanAssistant } from "./hooks/useAiPlanAssistant";
 import { useAdjustWorkflow } from "./hooks/useAdjustWorkflow";
 import { useImportExport } from "./hooks/useImportExport";
 import { usePlanActions } from "./hooks/usePlanActions";
@@ -13,7 +16,9 @@ import { usePlanState } from "./hooks/usePlanState";
 import { analyzeDelays, computeSchedule } from "./schedule";
 
 export default function App() {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const planState = usePlanState();
+  const ai = useAiSettings({ autoFetch: isSettingsOpen });
   const computed = useMemo(() => computeSchedule(planState.activePlan), [planState.activePlan]);
   const analysis = useMemo(() => analyzeDelays(planState.activePlan), [planState.activePlan]);
   const selected = computed.find((activity) => activity.id === planState.selectedId) ?? computed[0];
@@ -23,6 +28,12 @@ export default function App() {
     selected,
     setAlarm: timer.setAlarm,
     setMutedActivityId: timer.setMutedActivityId,
+  });
+  const aiPlanAssistant = useAiPlanAssistant({
+    plan: planState.activePlan,
+    settings: ai.settings,
+    setSelectedId: planState.setSelectedId,
+    updatePlan: actions.updatePlan,
   });
   const adjust = useAdjustWorkflow({
     activePlan: planState.activePlan,
@@ -52,6 +63,7 @@ export default function App() {
         running={timer.runningComputed}
         onBegin={actions.beginSelected}
         onComplete={actions.completeCurrent}
+        onOpenSettings={() => setIsSettingsOpen(true)}
         onTerminate={actions.terminateAndArchive}
       />
       <StatusStrip
@@ -65,6 +77,17 @@ export default function App() {
           actions={actions}
           adjustRows={adjust.rows}
           adjustSelection={adjust.selection}
+          aiAssistant={{
+            draft: aiPlanAssistant.draft,
+            error: aiPlanAssistant.error,
+            input: aiPlanAssistant.input,
+            isConfigured: Boolean(ai.settings.apiKey.trim() && ai.settings.apiUrl.trim() && ai.settings.model.trim()),
+            isGenerating: aiPlanAssistant.isGenerating,
+            onApplyDraft: aiPlanAssistant.applyDraft,
+            onGenerateDraft: () => void aiPlanAssistant.generateDraft(),
+            onInputChange: aiPlanAssistant.setInput,
+            onOpenSettings: () => setIsSettingsOpen(true),
+          }}
           canRun={canRun}
           computed={computed}
           importInputRef={importExport.importInputRef}
@@ -112,6 +135,16 @@ export default function App() {
           title={timer.alarm.title}
           onClose={() => timer.setAlarm(undefined)}
           onSnooze={() => timer.snooze()}
+        />
+      ) : null}
+      {isSettingsOpen ? (
+        <SettingsDialog
+          aiSettings={ai.settings}
+          isLoadingModels={ai.isLoadingModels}
+          modelsError={ai.modelsError}
+          onAiSettingsChange={ai.updateSettings}
+          onClose={() => setIsSettingsOpen(false)}
+          onRefreshModels={() => void ai.refreshModels()}
         />
       ) : null}
     </main>

@@ -5,6 +5,7 @@ import App from "./App";
 
 describe("App workflow", () => {
   beforeEach(() => {
+    vi.unstubAllGlobals();
     const store = new Map<string, string>();
     vi.stubGlobal("localStorage", {
       get length() {
@@ -50,5 +51,64 @@ describe("App workflow", () => {
     expect(screen.getByLabelText("统计 Key")).toBeInTheDocument();
     expect(screen.queryByText("列")).not.toBeInTheDocument();
     expect(screen.queryByText("Adjust 模板")).not.toBeInTheDocument();
+  });
+
+  it("opens AI settings from the homepage settings button", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "设置" }));
+
+    expect(screen.getByRole("dialog", { name: "设置" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "AI" })).toBeInTheDocument();
+    expect(screen.getByLabelText("API URL")).toHaveValue("https://api.openai.com/v1");
+    expect(screen.getByLabelText("API Key")).toBeInTheDocument();
+  });
+
+  it("generates an AI plan draft and applies it after confirmation", async () => {
+    localStorage.setItem(
+      "supermemo-plan-core:ai-settings:v1",
+      JSON.stringify({
+        apiKey: "secret",
+        apiUrl: "https://api.example.test/v1",
+        model: "gpt-test",
+        models: ["gpt-test"],
+      }),
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify({
+                    activities: [
+                      { title: "写作", desiredMinutes: 90, fixed: true },
+                      { title: "复盘", desiredMinutes: 20 },
+                    ],
+                  }),
+                },
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText(/明天上午/), {
+      target: { value: "安排写作 90 分钟，再复盘 20 分钟" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /生成草稿/ }));
+
+    expect(await screen.findByText("草稿")).toBeInTheDocument();
+    expect(screen.getByText("写作")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "应用到当前计划" }));
+
+    expect(screen.getByDisplayValue("写作")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("复盘")).toBeInTheDocument();
   });
 });

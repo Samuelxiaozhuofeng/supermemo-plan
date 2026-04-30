@@ -1,6 +1,7 @@
 import { ActivityInspector } from "./ActivityInspector";
 import { ActivityList } from "./ActivityList";
 import { AdjustPanel } from "./AdjustPanel";
+import { AiPlanAssistantPanel } from "./AiPlanAssistantPanel";
 import { ExecutionControls } from "./ExecutionControls";
 import { ExportControls } from "./ExportControls";
 import { PlanControls } from "./PlanControls";
@@ -10,6 +11,7 @@ import { Timeline } from "./Timeline";
 import type { RefObject } from "react";
 import type {
   Activity,
+  AiPlanDraft,
   AdjustPreviewRow,
   ComputedActivity,
   NotificationStatus,
@@ -21,6 +23,7 @@ export function ExecutionWorkspace({
   activePlan,
   adjustRows,
   adjustSelection,
+  aiAssistant,
   canRun,
   computed,
   importInputRef,
@@ -47,6 +50,17 @@ export function ExecutionWorkspace({
   activePlan: PlanDocument;
   adjustRows?: AdjustPreviewRow[];
   adjustSelection: Set<string>;
+  aiAssistant: {
+    draft?: AiPlanDraft;
+    error?: string;
+    input: string;
+    isConfigured: boolean;
+    isGenerating: boolean;
+    onApplyDraft: () => void;
+    onGenerateDraft: () => void;
+    onInputChange: (value: string) => void;
+    onOpenSettings: () => void;
+  };
   canRun: boolean;
   computed: ComputedActivity[];
   importInputRef: RefObject<HTMLInputElement | null>;
@@ -91,6 +105,18 @@ export function ExecutionWorkspace({
             onSplit={actions.splitSelected}
           />
         </div>
+        <AiPlanAssistantPanel
+          draft={aiAssistant.draft}
+          error={aiAssistant.error}
+          input={aiAssistant.input}
+          isConfigured={aiAssistant.isConfigured}
+          isGenerating={aiAssistant.isGenerating}
+          readOnly={readOnly}
+          onApplyDraft={aiAssistant.onApplyDraft}
+          onGenerateDraft={aiAssistant.onGenerateDraft}
+          onInputChange={aiAssistant.onInputChange}
+          onOpenSettings={aiAssistant.onOpenSettings}
+        />
         {adjustRows ? (
           <AdjustPanel
             rows={adjustRows}

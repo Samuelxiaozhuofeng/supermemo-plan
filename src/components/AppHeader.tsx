@@ -1,4 +1,4 @@
-import { CheckCircle2, Play, Square } from "lucide-react";
+import { CheckCircle2, Play, Settings, Square } from "lucide-react";
 import { formatDuration } from "../time";
 import type { ComputedActivity } from "../types";
 
@@ -12,6 +12,7 @@ export function AppHeader({
   running,
   onBegin,
   onComplete,
+  onOpenSettings,
   onTerminate,
 }: {
   canBegin: boolean;
@@ -23,6 +24,7 @@ export function AppHeader({
   running?: ComputedActivity;
   onBegin: () => void;
   onComplete: () => void;
+  onOpenSettings: () => void;
   onTerminate: () => void;
 }) {
   return (
@@ -48,6 +50,9 @@ export function AppHeader({
         </button>
         <button disabled={!canTerminate} onClick={onTerminate} type="button">
           <Square size={16} /> 归档
+        </button>
+        <button aria-label="设置" onClick={onOpenSettings} type="button">
+          <Settings size={16} />
         </button>
       </div>
     </header>

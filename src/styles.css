@@ -194,6 +194,80 @@ textarea:focus {
   padding: 16px;
 }
 
+.ai-plan-panel {
+  border-bottom: 1px solid #ededf0;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.ai-plan-heading,
+.ai-plan-actions,
+.ai-draft-heading {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.ai-plan-heading button,
+.ai-draft-heading button {
+  min-height: 30px;
+}
+
+.ai-plan-panel textarea {
+  min-height: 76px;
+}
+
+.ai-plan-actions {
+  justify-content: flex-start;
+}
+
+.ai-plan-actions span {
+  color: #6e6e73;
+  font-size: 12px;
+}
+
+.ai-draft {
+  border: 1px solid #ededf0;
+  border-radius: 10px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.ai-draft-list {
+  display: grid;
+  gap: 6px;
+}
+
+.ai-draft-row {
+  align-items: center;
+  background: #f9f9fb;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  padding: 8px;
+}
+
+.ai-draft-row span {
+  align-items: center;
+  background: #edf6ff;
+  border-radius: 999px;
+  color: #0a84ff;
+  display: flex;
+  font-size: 12px;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.ai-draft-row small {
+  color: #6e6e73;
+  white-space: nowrap;
+}
+
 .plan-strip label,
 .activity-inspector label,
 .settings-panel label {
@@ -604,6 +678,79 @@ textarea:focus {
   opacity: 0.58;
 }
 
+.settings-dialog {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.2);
+  display: grid;
+  gap: 14px;
+  max-width: 520px;
+  padding: 18px;
+  width: min(520px, calc(100vw - 32px));
+}
+
+.settings-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.settings-heading h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.settings-heading button {
+  min-height: 32px;
+  padding: 0 9px;
+}
+
+.settings-tabs {
+  background: #e9e9ed;
+  border: 1px solid #dedee3;
+  border-radius: 10px;
+  display: flex;
+  padding: 5px;
+  width: max-content;
+}
+
+.settings-tabs button {
+  min-height: 30px;
+}
+
+.ai-settings-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-settings-panel label {
+  color: #6e6e73;
+  display: grid;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.model-row {
+  align-items: end;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.model-row button {
+  min-width: 92px;
+}
+
+.settings-error {
+  background: #fff7ed;
+  border: 1px solid #f3d2aa;
+  border-radius: 8px;
+  color: #b85c00;
+  font-size: 12px;
+  margin: 0;
+  padding: 8px 10px;
+}
+
 .modal-backdrop {
   align-items: center;
   background: rgba(29, 29, 31, 0.42);
@@ -611,6 +758,7 @@ textarea:focus {
   inset: 0;
   justify-content: center;
   position: fixed;
+  z-index: 10;
 }
 
 .alarm-modal {
@@ -645,6 +793,9 @@ textarea:focus {
   .topbar,
   .top-actions,
   .plan-strip,
+  .ai-plan-heading,
+  .ai-plan-actions,
+  .ai-draft-heading,
   .execution-workspace,
   .insights-panel {
     align-items: stretch;
@@ -663,6 +814,7 @@ textarea:focus {
 
   .control-grid,
   .metric-row,
+  .model-row,
   .field-grid {
     grid-template-columns: 1fr;
   }
@@ -674,6 +826,14 @@ textarea:focus {
 
   .activity-edit,
   .fixed-toggle {
+    grid-column: 2;
+  }
+
+  .ai-draft-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .ai-draft-row small {
     grid-column: 2;
   }
 }
