@@ -9,6 +9,7 @@ import {
   computeSchedule,
   createAdjustPreview,
   mergeWithNext,
+  reorderActivities,
   splitActivity,
   terminatePlan,
 } from "./schedule";
@@ -165,6 +166,43 @@ describe("execution helpers", () => {
     const merged = mergeWithNext(split, split.activities[0].id);
     expect(merged.activities).toHaveLength(2);
     expect(merged.activities[0].desiredMinutes).toBe(60);
+  });
+
+  it("reorders activities while preserving schedule slots", () => {
+    const reordered = reorderActivities(
+      plan({
+        startTime: "09:00",
+        durationMinutes: 130,
+        activities: [
+          { id: "es", title: "西语学习", desiredMinutes: 60, fixedStart: "09:00", fixed: true },
+          { id: "jp", title: "日语学习", desiredMinutes: 60, fixedStart: "10:10", fixed: true },
+        ],
+      }),
+      "jp",
+      "es",
+    );
+    const rows = computeSchedule(reordered);
+
+    expect(reordered.activities.map((activity) => activity.title)).toEqual(["日语学习", "西语学习"]);
+    expect(reordered.activities.map((activity) => activity.fixedStart)).toEqual(["09:00", "10:10"]);
+    expect(rows.map((row) => row.startMinutes)).toEqual([540, 610]);
+  });
+
+  it("moves actual time records with the destination schedule slot", () => {
+    const reordered = reorderActivities(
+      plan({
+        activities: [
+          { id: "a", title: "A", desiredMinutes: 60, actualStart: "08:00", actualEnd: "09:00" },
+          { id: "b", title: "B", desiredMinutes: 60 },
+        ],
+      }),
+      "b",
+      "a",
+    );
+
+    expect(reordered.activities[0]).toMatchObject({ id: "b", actualStart: "08:00", actualEnd: "09:00" });
+    expect(reordered.activities[1].actualStart).toBeUndefined();
+    expect(reordered.activities[1].actualEnd).toBeUndefined();
   });
 });
 

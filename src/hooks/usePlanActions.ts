@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import {
   archiveExecution, beginActivity, completeCurrentActivity, copyHistoryToToday, createId, mergeWithNext,
-  resetExecution, splitActivity, terminatePlan, touch,
+  reorderActivities, resetExecution, splitActivity, terminatePlan, touch,
 } from "../schedule";
 import { nowAsTime } from "../time";
 import type { Activity, AppState, ComputedActivity, PlanDocument, ViewMode } from "../types";
@@ -94,10 +94,7 @@ export function usePlanActions(args: PlanActionArgs) {
     const targetIndex = args.activePlan.activities.findIndex((activity) => activity.id === targetId);
     if (sourceIndex < 0 || targetIndex < 0) return;
 
-    const activities = [...args.activePlan.activities];
-    const [moved] = activities.splice(sourceIndex, 1);
-    activities.splice(targetIndex, 0, moved);
-    updatePlan({ ...args.activePlan, activities });
+    updatePlan(reorderActivities(args.activePlan, sourceId, targetId));
     args.setSelectedId(sourceId);
   }
 
