@@ -1,13 +1,15 @@
 import type { Dispatch, SetStateAction } from "react";
 import {
   archiveExecution, beginActivity, completeCurrentActivity, copyHistoryToToday, createId, mergeWithNext,
-  resetExecution, splitActivity, touch,
+  resetExecution, splitActivity, terminatePlan, touch,
 } from "../schedule";
 import { nowAsTime } from "../time";
 import type { Activity, AppState, ComputedActivity, PlanDocument, ViewMode } from "../types";
 
 interface PlanActionArgs {
   activePlan: PlanDocument;
+  activeDateKey: string;
+  canRunActiveDate: boolean;
   readOnly: boolean;
   selected?: ComputedActivity;
   setAlarm: (value: undefined) => void;
@@ -23,7 +25,14 @@ interface PlanActionArgs {
 export function usePlanActions(args: PlanActionArgs) {
   function updatePlan(nextPlan: PlanDocument): void {
     if (nextPlan.mode === "execution") {
-      args.setState((current) => ({ ...current, today: touch(nextPlan) }));
+      const dateKey = nextPlan.dateKey ?? args.activeDateKey;
+      args.setState((current) => ({
+        ...current,
+        dailyPlans: {
+          ...current.dailyPlans,
+          [dateKey]: touch({ ...nextPlan, dateKey, mode: "execution" }),
+        },
+      }));
       return;
     }
     if (nextPlan.mode === "history") {
@@ -49,7 +58,7 @@ export function usePlanActions(args: PlanActionArgs) {
   }
 
   function addActivity(): void {
-    if (args.readOnly) return;
+    if (args.readOnly || args.activePlan.hasPlanWindow === false) return;
     const index = args.selected
       ? args.activePlan.activities.findIndex((activity) => activity.id === args.selected?.id) + 1
       : 0;
@@ -93,26 +102,41 @@ export function usePlanActions(args: PlanActionArgs) {
   }
 
   function beginSelected(): void {
-    if (!args.state.today || args.view !== "execution" || !args.selected) return;
+    if (!args.canRunActiveDate || args.view !== "execution" || !args.selected) return;
     args.setState((current) => ({
       ...current,
-      today: beginActivity(current.today ?? args.state.today!, args.selected!.id, nowAsTime()),
+      dailyPlans: {
+        ...current.dailyPlans,
+        [args.activeDateKey]: beginActivity(current.dailyPlans[args.activeDateKey] ?? args.activePlan, args.selected!.id, nowAsTime()),
+      },
     }));
     args.setMutedActivityId(undefined);
   }
 
   function completeCurrent(): void {
-    if (!args.state.today) return;
+    if (!args.canRunActiveDate) return;
     args.setState((current) => ({
       ...current,
-      today: completeCurrentActivity(current.today ?? args.state.today!, nowAsTime()),
+      dailyPlans: {
+        ...current.dailyPlans,
+        [args.activeDateKey]: completeCurrentActivity(current.dailyPlans[args.activeDateKey] ?? args.activePlan, nowAsTime()),
+      },
     }));
   }
 
   function terminateAndArchive(): void {
-    if (!args.state.today) return;
-    const archived = archiveExecution(args.state.today, nowAsTime());
-    args.setState((current) => ({ ...current, today: undefined, history: [archived, ...current.history] }));
+    const activePlan = args.state.dailyPlans[args.activeDateKey];
+    if (!activePlan) return;
+    const archived = archiveExecution(activePlan, nowAsTime());
+    const terminated = terminatePlan(activePlan, nowAsTime());
+    args.setState((current) => ({
+      ...current,
+      dailyPlans: {
+        ...current.dailyPlans,
+        [args.activeDateKey]: terminated,
+      },
+      history: [archived, ...current.history],
+    }));
     args.setSelectedHistoryId(archived.id);
     args.setView("history");
     args.setAlarm(undefined);
@@ -121,10 +145,16 @@ export function usePlanActions(args: PlanActionArgs) {
   function restoreHistoryAsToday(id: string): void {
     const plan = args.state.history.find((item) => item.id === id);
     if (!plan) return;
-    const today = copyHistoryToToday(plan);
-    args.setState((current) => ({ ...current, today }));
+    const restored = { ...copyHistoryToToday(plan), dateKey: args.activeDateKey, hasPlanWindow: plan.hasPlanWindow ?? true };
+    args.setState((current) => ({
+      ...current,
+      dailyPlans: {
+        ...current.dailyPlans,
+        [args.activeDateKey]: restored,
+      },
+    }));
     args.setView("execution");
-    args.setSelectedId(today.activities[0]?.id);
+    args.setSelectedId(restored.activities[0]?.id);
   }
 
   return {

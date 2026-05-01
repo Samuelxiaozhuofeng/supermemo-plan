@@ -1,4 +1,5 @@
 import type { PlanDocument } from "../types";
+import { toDateKey } from "./datePlans";
 import { createId } from "./ids";
 
 export function createBlankTemplate(): PlanDocument {
@@ -32,6 +33,8 @@ export function createExecutionFromTemplate(template: PlanDocument, date = new D
     id: createId(),
     name: `${dateLabel} - ${template.name}`,
     mode: "execution",
+    dateKey: toDateKey(date),
+    hasPlanWindow: true,
     sourceTemplateId: template.id,
     terminatedAt: undefined,
     createdAt: iso,
@@ -55,6 +58,7 @@ export function copyHistoryToToday(plan: PlanDocument): PlanDocument {
     ...plan,
     id: createId(),
     mode: "execution",
+    hasPlanWindow: plan.hasPlanWindow ?? true,
     name: `${plan.name}（复制）`,
     terminatedAt: undefined,
     archivedAt: undefined,

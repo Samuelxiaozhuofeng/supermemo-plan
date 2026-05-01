@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePlanState } from "./usePlanState";
 import type { AppState } from "../types";
 
@@ -20,17 +20,24 @@ function stubStorage(): Map<string, string> {
 
 describe("usePlanState", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 3, 30, 9));
     stubStorage();
   });
 
-  it("creates a today execution from the active template and switches to history plan", () => {
-    const state: AppState = {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("migrates a legacy today execution and switches to history plan", () => {
+    const state = {
       schemaVersion: 2,
       activeTemplateId: "b",
       templates: [
         { id: "a", name: "A", mode: "template", startTime: "08:00", durationMinutes: 60, createdAt: "", updatedAt: "", activities: [] },
         { id: "b", name: "B", mode: "template", startTime: "09:00", durationMinutes: 60, createdAt: "", updatedAt: "", activities: [] },
       ],
+      today: { id: "t", name: "Legacy Today", mode: "execution", startTime: "09:00", durationMinutes: 60, createdAt: "2026-04-30T01:00:00.000Z", updatedAt: "", activities: [] },
       history: [
         { id: "h", name: "H", mode: "history", startTime: "10:00", durationMinutes: 60, createdAt: "", updatedAt: "", activities: [] },
       ],
@@ -41,7 +48,8 @@ describe("usePlanState", () => {
     expect(result.current.activeTemplate.name).toBe("B");
     expect(result.current.view).toBe("execution");
     expect(result.current.activePlan.mode).toBe("execution");
-    expect(result.current.activePlan.name).toContain("B");
+    expect(result.current.activePlan.name).toBe("Legacy Today");
+    expect(result.current.state.dailyPlans["2026-04-30"]).toBeDefined();
 
     act(() => {
       result.current.setView("history");
@@ -50,5 +58,27 @@ describe("usePlanState", () => {
 
     expect(result.current.activePlan.name).toBe("H");
     expect(result.current.readOnly).toBe(true);
+  });
+
+  it("creates a blank plan when jumping to an empty date", () => {
+    const state: AppState = {
+      schemaVersion: 3,
+      activeTemplateId: "b",
+      templates: [
+        { id: "b", name: "B", mode: "template", startTime: "09:00", durationMinutes: 60, createdAt: "", updatedAt: "", activities: [] },
+      ],
+      dailyPlans: {},
+      history: [],
+    };
+    localStorage.setItem("supermemo-plan-core:v3", JSON.stringify(state));
+
+    const { result } = renderHook(() => usePlanState());
+    act(() => {
+      result.current.jumpToDate("2026-05-01");
+    });
+
+    expect(result.current.selectedDateKey).toBe("2026-05-01");
+    expect(result.current.activePlan.activities).toEqual([]);
+    expect(result.current.activePlan.hasPlanWindow).toBe(false);
   });
 });

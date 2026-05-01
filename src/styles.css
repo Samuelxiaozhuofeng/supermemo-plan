@@ -114,6 +114,8 @@ textarea:focus {
 
 .top-actions,
 .status-strip,
+.date-navigator,
+.date-strip,
 .execution-actions,
 .control-grid {
   align-items: center;
@@ -135,6 +137,49 @@ textarea:focus {
   max-width: 1440px;
   padding: 6px;
   width: max-content;
+}
+
+.date-navigator {
+  justify-content: space-between;
+  margin: 0 auto 12px;
+  max-width: 1440px;
+}
+
+.date-strip {
+  background: #ffffff;
+  border: 1px solid #dedee3;
+  border-radius: 10px;
+  overflow-x: auto;
+  padding: 5px;
+}
+
+.date-tab {
+  background: transparent;
+  border-color: transparent;
+  min-width: 74px;
+}
+
+.date-tab.active {
+  background: #edf6ff;
+  border-color: #0a84ff;
+  color: #0a84ff;
+}
+
+.date-picker {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #dedee3;
+  border-radius: 10px;
+  display: flex;
+  gap: 8px;
+  min-width: 178px;
+  padding: 5px 8px;
+}
+
+.date-picker input {
+  border: 0;
+  height: 30px;
+  padding: 0;
 }
 
 .tab {
@@ -199,6 +244,25 @@ textarea:focus {
   display: grid;
   gap: 10px;
   padding: 16px;
+}
+
+.empty-day-panel {
+  display: grid;
+  gap: 6px;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.empty-day-panel h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.empty-day-panel p,
+.empty-window-note {
+  color: #6e6e73;
+  font-size: 13px;
+  margin: 0;
 }
 
 .ai-plan-heading,
@@ -792,6 +856,8 @@ textarea:focus {
 
   .topbar,
   .top-actions,
+  .date-navigator,
+  .date-strip,
   .plan-strip,
   .ai-plan-heading,
   .ai-plan-actions,
@@ -808,8 +874,13 @@ textarea:focus {
   }
 
   .status-strip button,
+  .date-tab,
   .top-actions button {
     flex: 1;
+  }
+
+  .date-picker {
+    width: 100%;
   }
 
   .control-grid,

@@ -1,19 +1,38 @@
-import type { AppState } from "./types";
+import type { AppState, PlanDocument } from "./types";
 import { createSeedState } from "./sampleData";
-import { createExecutionFromTemplate } from "./schedule";
+import { ensureDatePlan, normalizeExecutionDate, toDateKey } from "./schedule";
 
-const STORAGE_KEY = "supermemo-plan-core:v2";
+const STORAGE_KEY = "supermemo-plan-core:v3";
+const LEGACY_V2_STORAGE_KEY = "supermemo-plan-core:v2";
 const LEGACY_STORAGE_KEY = "supermemo-plan-core:v1";
 
-function normalizeState(value: unknown): AppState {
-  const seed = createSeedState();
+type LegacyState = Partial<Omit<AppState, "schemaVersion">> & {
+  schemaVersion?: number;
+  today?: PlanDocument;
+};
+
+function dateKeyForLegacyPlan(plan: PlanDocument | undefined, fallback: string): string {
+  if (!plan) {
+    return fallback;
+  }
+  if (plan.dateKey) {
+    return plan.dateKey;
+  }
+  const source = plan.createdAt || plan.updatedAt;
+  const date = source ? new Date(source) : undefined;
+  return date && !Number.isNaN(date.getTime()) ? toDateKey(date) : fallback;
+}
+
+export function normalizeState(value: unknown, now = new Date()): AppState {
+  const seed = createSeedState(now);
+  const currentDateKey = toDateKey(now);
   if (!value || typeof value !== "object") {
-    return ensureToday(seed);
+    return ensureDatePlan(seed, currentDateKey);
   }
 
-  const candidate = value as Partial<AppState>;
+  const candidate = value as LegacyState;
   if (!Array.isArray(candidate.templates) || candidate.templates.length === 0) {
-    return ensureToday(seed);
+    return ensureDatePlan(seed, currentDateKey);
   }
 
   const activeTemplateId =
@@ -21,31 +40,32 @@ function normalizeState(value: unknown): AppState {
     candidate.templates.some((template) => template.id === candidate.activeTemplateId)
       ? candidate.activeTemplateId
       : candidate.templates[0].id;
+  const dailyPlans: Record<string, PlanDocument> = {};
+  if (candidate.dailyPlans && typeof candidate.dailyPlans === "object") {
+    for (const [dateKey, plan] of Object.entries(candidate.dailyPlans)) {
+      if (plan) {
+        dailyPlans[dateKey] = normalizeExecutionDate(plan, dateKey);
+      }
+    }
+  }
+  if (candidate.today) {
+    const dateKey = dateKeyForLegacyPlan(candidate.today, currentDateKey);
+    dailyPlans[dateKey] = normalizeExecutionDate(candidate.today, dateKey);
+  }
 
-  return ensureToday({
-    schemaVersion: 2,
+  return ensureDatePlan({
+    schemaVersion: 3,
     templates: candidate.templates.map((template) => ({
       ...template,
       mode: "template",
       activities: template.activities ?? [],
     })),
     activeTemplateId,
-    today: candidate.today
-      ? { ...candidate.today, mode: "execution" }
-      : undefined,
+    dailyPlans,
     history: Array.isArray(candidate.history)
       ? candidate.history.map((plan) => ({ ...plan, mode: "history" }))
       : [],
-  });
-}
-
-export function ensureToday(state: AppState): AppState {
-  if (state.today) {
-    return state;
-  }
-
-  const template = state.templates.find((item) => item.id === state.activeTemplateId) ?? state.templates[0];
-  return { ...state, today: createExecutionFromTemplate(template) };
+  }, currentDateKey);
 }
 
 export function loadState(): AppState {
@@ -53,15 +73,18 @@ export function loadState(): AppState {
     return createSeedState();
   }
 
-  const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
+  const raw =
+    localStorage.getItem(STORAGE_KEY) ??
+    localStorage.getItem(LEGACY_V2_STORAGE_KEY) ??
+    localStorage.getItem(LEGACY_STORAGE_KEY);
   if (!raw) {
-    return ensureToday(createSeedState());
+    return ensureDatePlan(createSeedState(), toDateKey(new Date()));
   }
 
   try {
     return normalizeState(JSON.parse(raw));
   } catch {
-    return ensureToday(createSeedState());
+    return ensureDatePlan(createSeedState(), toDateKey(new Date()));
   }
 }
 

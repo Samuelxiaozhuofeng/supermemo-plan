@@ -25,6 +25,7 @@ export function ExecutionWorkspace({
   adjustSelection,
   aiAssistant,
   canRun,
+  hasPlanWindow,
   computed,
   importInputRef,
   notificationStatus,
@@ -62,6 +63,7 @@ export function ExecutionWorkspace({
     onOpenSettings: () => void;
   };
   canRun: boolean;
+  hasPlanWindow: boolean;
   computed: ComputedActivity[];
   importInputRef: RefObject<HTMLInputElement | null>;
   notificationStatus: NotificationStatus;
@@ -97,7 +99,7 @@ export function ExecutionWorkspace({
         <div className="plan-strip">
           <PlanEditorPanel plan={activePlan} readOnly={readOnly} onChange={actions.updatePlan} />
           <PlanControls
-            disabled={readOnly}
+            disabled={readOnly || !hasPlanWindow}
             onAdd={actions.addActivity}
             onDelete={actions.deleteActivity}
             onMerge={actions.mergeSelected}
@@ -105,18 +107,20 @@ export function ExecutionWorkspace({
             onSplit={actions.splitSelected}
           />
         </div>
-        <AiPlanAssistantPanel
-          draft={aiAssistant.draft}
-          error={aiAssistant.error}
-          input={aiAssistant.input}
-          isConfigured={aiAssistant.isConfigured}
-          isGenerating={aiAssistant.isGenerating}
-          readOnly={readOnly}
-          onApplyDraft={aiAssistant.onApplyDraft}
-          onGenerateDraft={aiAssistant.onGenerateDraft}
-          onInputChange={aiAssistant.onInputChange}
-          onOpenSettings={aiAssistant.onOpenSettings}
-        />
+        {hasPlanWindow ? (
+          <AiPlanAssistantPanel
+            draft={aiAssistant.draft}
+            error={aiAssistant.error}
+            input={aiAssistant.input}
+            isConfigured={aiAssistant.isConfigured}
+            isGenerating={aiAssistant.isGenerating}
+            readOnly={readOnly}
+            onApplyDraft={aiAssistant.onApplyDraft}
+            onGenerateDraft={aiAssistant.onGenerateDraft}
+            onInputChange={aiAssistant.onInputChange}
+            onOpenSettings={aiAssistant.onOpenSettings}
+          />
+        ) : null}
         {adjustRows ? (
           <AdjustPanel
             rows={adjustRows}
@@ -126,16 +130,25 @@ export function ExecutionWorkspace({
             onToggle={onAdjustToggle}
           />
         ) : null}
-        <Timeline plan={activePlan} rows={computed} selectedId={selectedId} onSelect={onSelectActivity} />
-        <ActivityList
-          readOnly={readOnly}
-          rows={computed}
-          selectedId={selectedId}
-          onAddActivity={actions.addActivity}
-          onChange={onUpdateActivity}
-          onReorder={onReorderActivity}
-          onSelect={onSelectActivity}
-        />
+        {hasPlanWindow ? (
+          <>
+            <Timeline plan={activePlan} rows={computed} selectedId={selectedId} onSelect={onSelectActivity} />
+            <ActivityList
+              readOnly={readOnly}
+              rows={computed}
+              selectedId={selectedId}
+              onAddActivity={actions.addActivity}
+              onChange={onUpdateActivity}
+              onReorder={onReorderActivity}
+              onSelect={onSelectActivity}
+            />
+          </>
+        ) : (
+          <div className="empty-day-panel">
+            <h2>这一天还是空白</h2>
+            <p>先设置起点和终点，再添加活动。</p>
+          </div>
+        )}
       </section>
       <aside className="inspector-panel">
         <ActivityInspector activity={selected} readOnly={readOnly} onChange={onUpdateActivity} />

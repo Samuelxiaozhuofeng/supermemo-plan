@@ -1,7 +1,7 @@
 import { analyzeDelays, computeSchedule } from "./schedule";
 import type { AppState, PlanDocument } from "./types";
 import { formatTime } from "./time";
-import { ensureToday } from "./storage";
+import { normalizeState } from "./storage";
 
 function csvEscape(value: string | number): string {
   const text = String(value);
@@ -12,6 +12,9 @@ function csvEscape(value: string | number): string {
 }
 
 export function exportPlanMarkdown(plan: PlanDocument): string {
+  if (plan.hasPlanWindow === false) {
+    return `# ${plan.name}\n\n尚未设置计划窗口。\n`;
+  }
   const rows = computeSchedule(plan);
   const analysis = analyzeDelays(plan);
   const lines = [`# ${plan.name}`, "", `计划窗口：${plan.startTime} / ${plan.durationMinutes} 分钟`, ""];
@@ -40,7 +43,7 @@ export function exportPlanCsv(plan: PlanDocument): string {
     "percentOfOptimum",
     "notes",
   ];
-  const rows = computeSchedule(plan).map((row) => [
+  const rows = plan.hasPlanWindow === false ? [] : computeSchedule(plan).map((row) => [
     row.title,
     formatTime(row.startMinutes),
     formatTime(row.endMinutes),
@@ -62,15 +65,9 @@ export function exportStateJson(state: AppState): string {
 }
 
 export function parseStateBackup(text: string): AppState {
-  const parsed = JSON.parse(text) as AppState;
+  const parsed = JSON.parse(text) as Partial<AppState>;
   if (!Array.isArray(parsed.templates) || parsed.templates.length === 0) {
     throw new Error("备份文件缺少 templates");
   }
-  return ensureToday({
-    schemaVersion: 2,
-    templates: parsed.templates,
-    activeTemplateId: parsed.activeTemplateId ?? parsed.templates[0].id,
-    today: parsed.today ? { ...parsed.today, mode: "execution" } : undefined,
-    history: Array.isArray(parsed.history) ? parsed.history : [],
-  });
+  return normalizeState(parsed);
 }

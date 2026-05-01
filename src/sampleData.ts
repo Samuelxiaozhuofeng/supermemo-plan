@@ -1,9 +1,10 @@
 import type { AppState, PlanDocument } from "./types";
-import { createId } from "./schedule";
+import { createBlankExecutionForDate, createId, toDateKey } from "./schedule";
 
 const now = new Date().toISOString();
 
-export function createSeedState(): AppState {
+export function createSeedState(date = new Date()): AppState {
+  const dateKey = toDateKey(date);
   const template: PlanDocument = {
     id: createId(),
     name: "学习与深度工作",
@@ -24,9 +25,12 @@ export function createSeedState(): AppState {
   };
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     templates: [template],
     activeTemplateId: template.id,
+    dailyPlans: {
+      [dateKey]: createBlankExecutionForDate(dateKey),
+    },
     history: [],
   };
 }

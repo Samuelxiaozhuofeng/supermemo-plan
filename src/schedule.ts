@@ -1,6 +1,7 @@
 export * from "./domain/adjust";
 export * from "./domain/computeSchedule";
 export * from "./domain/constraints";
+export * from "./domain/datePlans";
 export * from "./domain/delayAnalysis";
 export * from "./domain/editing";
 export * from "./domain/execution";

@@ -23,14 +23,29 @@ describe("exporters", () => {
 
   it("round-trips a JSON backup", () => {
     const state: AppState = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       templates: [{ ...plan, mode: "template" }],
       activeTemplateId: "p",
+      dailyPlans: { "2026-04-30": { ...plan, dateKey: "2026-04-30", hasPlanWindow: true } },
       history: [],
     };
 
     const parsed = parseStateBackup(exportStateJson(state));
-    expect(parsed.schemaVersion).toBe(2);
+    expect(parsed.schemaVersion).toBe(3);
     expect(parsed.templates[0].name).toBe("Export Test");
+    expect(parsed.dailyPlans["2026-04-30"].name).toBe("Export Test");
+  });
+
+  it("imports a v2 backup with today into daily plans", () => {
+    const parsed = parseStateBackup(JSON.stringify({
+      schemaVersion: 2,
+      templates: [{ ...plan, mode: "template" }],
+      activeTemplateId: "p",
+      today: { ...plan, createdAt: "2026-04-30T00:00:00.000Z" },
+      history: [],
+    }));
+
+    expect(parsed.schemaVersion).toBe(3);
+    expect(parsed.dailyPlans["2026-04-30"].name).toBe("Export Test");
   });
 });

@@ -48,7 +48,7 @@ export function HistoryPanel({
                   }}
                   type="button"
                 >
-                  复制为今日
+                  复制到当前日期
                 </button>
                 <button
                   onClick={(event) => {

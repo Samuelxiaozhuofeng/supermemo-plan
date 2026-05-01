@@ -19,19 +19,38 @@ describe("App workflow", () => {
     });
   });
 
-  it("opens directly on today execution without template controls", () => {
+  function setPlanWindow(): void {
+    fireEvent.change(screen.getByLabelText("起点"), { target: { value: "08:00" } });
+    fireEvent.change(screen.getByLabelText("终点"), { target: { value: "09:00" } });
+  }
+
+  it("opens on a blank dated execution without template controls", () => {
     render(<App />);
 
     expect(screen.getByRole("button", { name: "今日执行" })).toHaveClass("active");
     expect(screen.queryByText("模板")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /创建今日副本/ })).not.toBeInTheDocument();
+    expect(screen.getByText("这一天还是空白")).toBeInTheDocument();
+    expect(screen.queryByText("时间轴")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /新增/ })).toBeDisabled();
+  });
+
+  it("sets a plan window and then allows activities", () => {
+    render(<App />);
+
+    setPlanWindow();
+    fireEvent.click(screen.getByRole("button", { name: /新增/ }));
+
     expect(screen.getByText("时间轴")).toBeInTheDocument();
     expect(screen.getByLabelText("今日活动")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("新活动")).toBeInTheDocument();
   });
 
   it("runs begin, complete, terminate, and shows insights", async () => {
     render(<App />);
 
+    setPlanWindow();
+    fireEvent.click(screen.getByRole("button", { name: /新增/ }));
     fireEvent.click(screen.getByRole("button", { name: /Begin/ }));
     expect(await screen.findByText(/剩余/)).toBeInTheDocument();
 
@@ -46,6 +65,9 @@ describe("App workflow", () => {
 
   it("keeps execution surface compact and moves advanced fields to details", () => {
     render(<App />);
+
+    setPlanWindow();
+    fireEvent.click(screen.getByRole("button", { name: /新增/ }));
 
     expect(screen.getByText("活动详情")).toBeInTheDocument();
     expect(screen.getByLabelText("统计 Key")).toBeInTheDocument();
@@ -98,6 +120,7 @@ describe("App workflow", () => {
     );
     render(<App />);
 
+    setPlanWindow();
     fireEvent.change(screen.getByPlaceholderText(/明天上午/), {
       target: { value: "安排写作 90 分钟，再复盘 20 分钟" },
     });

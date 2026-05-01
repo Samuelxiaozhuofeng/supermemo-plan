@@ -7,6 +7,8 @@ export function AppHeader({
   canComplete,
   canTerminate,
   clock,
+  dateLabel,
+  isToday,
   planName,
   remainingSeconds,
   running,
@@ -19,6 +21,8 @@ export function AppHeader({
   canComplete: boolean;
   canTerminate: boolean;
   clock: Date;
+  dateLabel: string;
+  isToday: boolean;
   planName: string;
   remainingSeconds?: number;
   running?: ComputedActivity;
@@ -30,7 +34,7 @@ export function AppHeader({
   return (
     <header className="topbar">
       <div>
-        <p className="eyebrow">今日执行</p>
+        <p className="eyebrow">{isToday ? "今日执行" : "日期执行"} · {dateLabel}</p>
         <h1>{planName}</h1>
         <p>
           当前 {clock.toLocaleTimeString("zh-CN", { hour12: false })}

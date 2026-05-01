@@ -31,6 +31,8 @@ export interface PlanDocument {
   startTime: string;
   durationMinutes: number;
   activities: Activity[];
+  dateKey?: string;
+  hasPlanWindow?: boolean;
   sourceTemplateId?: string;
   terminatedAt?: string;
   archivedAt?: string;
@@ -71,10 +73,10 @@ export interface DelayAnalysis {
 }
 
 export interface AppState {
-  schemaVersion: 2;
+  schemaVersion: 3;
   templates: PlanDocument[];
   activeTemplateId: string;
-  today?: PlanDocument;
+  dailyPlans: Record<string, PlanDocument>;
   history: PlanDocument[];
 }
 
